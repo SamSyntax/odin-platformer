@@ -1,11 +1,14 @@
 package main
 
-import "core:math"
 import rl "vendor:raylib"
 
 SCREEN_WIDTH :: 800
 SCREEN_HEIGHT :: 600
 PLAYER_COLOUR :: rl.Color{70, 130, 180, 255}
+GRAVITY :: f32(1200)
+JUMP_VELOCITY :: f32(-560)
+MOVE_SPEED :: f32(280)
+MAX_FALL_SPEED :: f32(800)
 
 Player :: struct {
 	vel:       rl.Vector2,
@@ -25,6 +28,39 @@ game_init :: proc() -> Game {
 	game.player.pos = {60, 460}
 	game.player.spawn_pos = game.player.pos
 	return game
+}
+
+game_update :: proc(game: ^Game, dt: f32) {
+	player_update(&game.player, dt)
+}
+
+player_update :: proc(player: ^Player, dt: f32) {
+	player.vel.x = 0
+
+	if rl.IsKeyDown(.LEFT) || rl.IsKeyDown(.A) {
+		player.vel.x = -MOVE_SPEED
+	}
+	if rl.IsKeyDown(.RIGHT) || rl.IsKeyDown(.D) {
+		player.vel.x = MOVE_SPEED
+	}
+
+	jump_pressed := rl.IsKeyPressed(.SPACE) || rl.IsKeyPressed(.UP) || rl.IsKeyPressed(.W)
+	if jump_pressed && player.on_ground {
+		player.vel.y = JUMP_VELOCITY
+		player.on_ground = false
+	}
+
+	// accumulate gravity each frame
+	player.vel.y = min(player.vel.y + GRAVITY * dt, MAX_FALL_SPEED)
+	player.pos.x += player.vel.x * dt
+	player.pos.x = clamp(player.pos.x, 0, f32(SCREEN_WIDTH) - player.size.x)
+
+  player.pos.y += player.vel.y *dt
+
+  if player.pos.y > f32(SCREEN_WIDTH) + 200 {
+    player.pos = player.spawn_pos
+    player.vel = {}
+  }
 }
 
 game_draw :: proc(game: ^Game) {
