@@ -10,12 +10,13 @@ main :: proc() {
 	rl.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Platformer with Odin")
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(TARGET_FPS)
-  game := game_init()
+	game := game_init()
 	for !rl.WindowShouldClose() {
 		dt := rl.GetFrameTime()
+		game_update(&game, dt)
 
 		rl.BeginDrawing()
-    game_draw(&game)
+		game_draw(&game)
 		rl.EndDrawing()
 	}
 }
