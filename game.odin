@@ -9,6 +9,12 @@ GRAVITY :: f32(1200)
 JUMP_VELOCITY :: f32(-560)
 MOVE_SPEED :: f32(280)
 MAX_FALL_SPEED :: f32(800)
+MAX_PLATFORMS :: 16
+
+Platform :: struct {
+	rect:  rl.Rectangle,
+	color: rl.Color,
+}
 
 Player :: struct {
 	vel:       rl.Vector2,
@@ -19,7 +25,9 @@ Player :: struct {
 }
 
 Game :: struct {
-	player: Player,
+	player:         Player,
+	platforms:      [MAX_PLATFORMS]Platform,
+	platform_count: i8,
 }
 
 game_init :: proc() -> Game {
@@ -27,14 +35,30 @@ game_init :: proc() -> Game {
 	game.player.size = {28, 44}
 	game.player.pos = {60, 460}
 	game.player.spawn_pos = game.player.pos
+
+	game.platforms[0] = Platform {
+		rect  = {0, 560, 800, 40},
+		color = rl.DARKGREEN,
+	}
+	game.platforms[1] = Platform {
+		rect  = {100, 460, 140, 16},
+		color = rl.BROWN,
+	}
+	game.platforms[2] = Platform {
+		rect  = {240, 260, 330, 24},
+		color = rl.BROWN,
+	}
+	game.platform_count = 3
+
 	return game
 }
 
 game_update :: proc(game: ^Game, dt: f32) {
-	player_update(&game.player, dt)
+	platforms := game.platforms[:game.platform_count]
+	player_update(&game.player, platforms, dt)
 }
 
-player_update :: proc(player: ^Player, dt: f32) {
+player_update :: proc(player: ^Player, platforms: []Platform, dt: f32) {
 	player.vel.x = 0
 
 	if rl.IsKeyDown(.LEFT) || rl.IsKeyDown(.A) {
@@ -55,18 +79,22 @@ player_update :: proc(player: ^Player, dt: f32) {
 	player.pos.x += player.vel.x * dt
 	player.pos.x = clamp(player.pos.x, 0, f32(SCREEN_WIDTH) - player.size.x)
 
-  player.pos.y += player.vel.y *dt
+	player.on_ground = false
+	player.pos.y += player.vel.y * dt
 
-  if player.pos.y > f32(SCREEN_WIDTH) + 200 {
-    player.pos = player.spawn_pos
-    player.vel = {}
-  }
+	if player.pos.y > f32(SCREEN_WIDTH) + 200 {
+		player.pos = player.spawn_pos
+		player.vel = {}
+	}
 }
 
 game_draw :: proc(game: ^Game) {
 	rl.ClearBackground({135, 206, 235, 255})
+	draw_platforms(game.platforms[:game.platform_count])
 	draw_player(game.player)
 }
+
+draw_platforms :: proc(platforms: []Platform) {}
 
 player_rect :: proc(p: Player) -> rl.Rectangle {
 	return {p.pos.x, p.pos.y, p.size.x, p.size.y}
