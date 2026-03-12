@@ -143,6 +143,11 @@ player_update :: proc(player: ^Player, platforms: []Platform, doors: []Door, dt:
 	// accumulate gravity each frame
 	player.vel.y = min(player.vel.y + GRAVITY * dt, MAX_FALL_SPEED)
 	player.pos.x += player.vel.x * dt
+	for d in doors {
+		if !d.open {
+			resolve_horizontal(player, d.rect)
+		}
+	}
 	for p in platforms {
 		resolve_horizontal(player, p.rect)
 	}
@@ -154,12 +159,6 @@ player_update :: proc(player: ^Player, platforms: []Platform, doors: []Door, dt:
 		resolve_vertical(player, p.rect)
 	}
 
-	for d in doors {
-		if !d.open {
-			resolve_horizontal(player, d.rect)
-		}
-	}
-
 	if player.pos.y > f32(SCREEN_WIDTH) + 200 {
 		player.pos = player.spawn_pos
 		player.vel = {}
@@ -169,6 +168,7 @@ player_update :: proc(player: ^Player, platforms: []Platform, doors: []Door, dt:
 game_draw :: proc(game: ^Game) {
 	rl.ClearBackground({135, 206, 235, 255})
 	draw_platforms(game.platforms[:game.platform_count])
+	draw_doors(game.doors[:game.door_count])
 	draw_player(game.player)
 	draw_coins(game.coins[:game.coin_count])
 }
@@ -252,10 +252,25 @@ draw_score :: proc(game: Game) {
 }
 
 draw_doors :: proc(doors: []Door) {
-
 	for d in doors {
+		if d.open do continue
 		if !d.open {
 			rl.DrawRectangleRec(d.rect, rl.BROWN)
+			rl.DrawRectangle(
+				i32(d.rect.x),
+				i32(d.rect.y),
+				3,
+				i32(d.rect.height),
+				{255, 255, 255, 60},
+			)
+
+			icon_x := d.rect.x + d.rect.width / 2
+			icon_y := d.rect.y + d.rect.height / 3
+			rl.DrawCircleV({icon_x, icon_y}, 8, COIN_COLOUR)
+			rl.DrawCircleLinesV({icon_x, icon_y}, 8, COIN_DEPTH_OUTLINE_COLOUR)
+			label := fmt.ctprintf("x%d", d.coins_required)
+			label_w := rl.MeasureText(label, 16)
+			rl.DrawText(label, i32(icon_x) - label_w / 2, i32(icon_y) + 12, 16, rl.BLACK)
 		}
 	}
 }
