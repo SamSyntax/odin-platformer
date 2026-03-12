@@ -15,6 +15,8 @@ MAX_FALL_SPEED :: f32(800)
 MAX_PLATFORMS :: 16
 MAX_COINS :: 32
 COIN_RADIUS :: f32(8)
+COIN_COLOUR :: rl.Color{255, 215, 0, 255}
+COIN_DEPTH_OUTLINE_COLOUR :: rl.Color{255, 178, 13, 255}
 
 Platform :: struct {
 	rect:  rl.Rectangle,
@@ -52,6 +54,7 @@ Coin :: struct {
 draw_framerate :: proc() {
 	rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), 10, 10, 20, rl.BLACK)
 }
+
 
 game_init :: proc() -> Game {
 	game: Game
@@ -93,6 +96,7 @@ game_update :: proc(game: ^Game, dt: f32) {
 	player_update(&game.player, platforms, dt)
 	coins_collect(game)
 	draw_framerate()
+	draw_score(game^)
 }
 
 
@@ -179,7 +183,15 @@ coin_rect :: proc(coin: Coin) -> rl.Rectangle {
 draw_coins :: proc(coins: []Coin) {
 	for coin in coins {
 		if !coin.collected {
-			rl.DrawCircle(i32(coin.pos.x), i32(coin.pos.y), COIN_RADIUS, rl.YELLOW)
+			rl.DrawCircleLinesV(coin.pos, COIN_RADIUS, COIN_DEPTH_OUTLINE_COLOUR)
+			rl.DrawCircle(i32(coin.pos.x), i32(coin.pos.y), COIN_RADIUS + 4, rl.BLACK)
+			rl.DrawCircle(
+				i32(coin.pos.x),
+				i32(coin.pos.y),
+				COIN_RADIUS + 2,
+				COIN_DEPTH_OUTLINE_COLOUR,
+			)
+			rl.DrawCircle(i32(coin.pos.x), i32(coin.pos.y), COIN_RADIUS, COIN_COLOUR)
 		}
 	}
 }
@@ -195,4 +207,17 @@ coins_collect :: proc(game: ^Game) {
 
 		}
 	}
+}
+
+draw_score :: proc(game: Game) {
+	collected: u8
+	for c in game.coins {
+		if c.collected {
+			collected += 1
+		}
+	}
+	score_text := fmt.ctprintf("Total score: %d", game.total_score)
+	coins := fmt.ctprintf("Coins: %d/%d", collected, game.coin_count)
+	rl.DrawText(score_text, WINDOW_WIDTH - 200, 10, 20, rl.BLACK)
+	rl.DrawText(coins, WINDOW_WIDTH - 200, 30, 20, rl.BLACK)
 }
