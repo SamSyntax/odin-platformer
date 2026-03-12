@@ -238,7 +238,7 @@ draw_doors :: proc(doors: []Door) {
 			)
 
 			icon_x := d.rect.x + d.rect.width / 2
-			icon_y := d.rect.y + d.rect.height / 3
+			icon_y := d.rect.y - 24
 			rl.DrawCircleV({icon_x, icon_y}, 8, COIN_COLOUR)
 			rl.DrawCircleLinesV({icon_x, icon_y}, 8, COIN_DEPTH_OUTLINE_COLOUR)
 			label := fmt.ctprintf("x%d", d.coins_required)
