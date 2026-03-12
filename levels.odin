@@ -45,6 +45,7 @@ add_door :: proc(game: ^Game, x, y, w, h: f32, coins_required: u8) {
 		open           = false,
 		coins_required = coins_required,
 	}
+  game.door_count += 1
 }
 
 level_1 :: proc(game: ^Game) {

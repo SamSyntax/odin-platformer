@@ -263,14 +263,13 @@ check_door :: proc(game: Game, door: []Door) {
 }
 
 
-draw_score :: proc(game: Game) {
-	score_text := fmt.ctprintf("Total score: %d", game.total_score)
-	coins := fmt.ctprintf("Coins: %d/%d", game.score, game.coin_count)
-	rl.DrawText(score_text, WINDOW_WIDTH - 200, 10, 20, rl.BLACK)
-	rl.DrawText(coins, WINDOW_WIDTH - 200, 30, 20, rl.BLACK)
-}
 draw_hud :: proc(game: Game) {
-	draw_score(game)
-	rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), 10, 10, 20, rl.BLACK)
+	level_str := fmt.ctprintf("Level %d / %d", game.current_level + 1, LEVEL_COUNT)
+	level_w := rl.MeasureText(level_str, 16)
+	rl.DrawText(level_str, SCREEN_WIDTH - level_w - 10, 10, 20, rl.BLACK)
+
+	score_str := fmt.ctprintf("Coins: %d / %d", game.score, game.coin_count)
+	score_w := rl.MeasureText(score_str, 16)
+	rl.DrawText(score_str, SCREEN_WIDTH - score_w - 10, 30, 20, rl.BLACK)
 }
 game_overlay :: proc(game: Game) {}
