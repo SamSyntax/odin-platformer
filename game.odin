@@ -22,6 +22,7 @@ MAX_PLATFORMS :: 16
 MAX_COINS :: 32
 MAX_DOORS :: 8
 
+
 Platform :: struct {
 	rect:  rl.Rectangle,
 	color: rl.Color,
@@ -42,14 +43,18 @@ Player :: struct {
 }
 
 Game :: struct {
-	player:         Player,
-	platforms:      [MAX_PLATFORMS]Platform,
-	platform_count: u8,
-	coins:          [MAX_COINS]Coin,
-	coin_count:     u8,
-	total_score:    u16,
-	doors:          [MAX_DOORS]Door,
-	door_count:     u8,
+	player:           Player,
+	platforms:        [MAX_PLATFORMS]Platform,
+	platform_count:   u8,
+	coins:            [MAX_COINS]Coin,
+	coin_count:       u16,
+	total_score:      u16,
+	score:            u8,
+	doors:            [MAX_DOORS]Door,
+	door_count:       u8,
+	current_level:    u8,
+	game_complete:    bool,
+	transition_timer: f32,
 }
 
 Coin :: struct {
@@ -64,61 +69,38 @@ Door :: struct {
 	coins_required: u8,
 }
 
-draw_framerate :: proc() {
-	rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), 10, 10, 20, rl.BLACK)
-}
-
 
 game_init :: proc() -> Game {
 	game: Game
 	game.player.size = {28, 44}
-	game.player.pos = {60, 460}
-	game.player.spawn_pos = game.player.pos
-	game.player.direction = .LEFT
-
-	game.platforms[0] = Platform {
-		rect  = {0, 560, WINDOW_WIDTH, 40},
-		color = rl.DARKGREEN,
-	}
-	game.platforms[1] = Platform {
-		rect  = {100, 460, 140, 16},
-		color = rl.BROWN,
-	}
-	game.platforms[2] = Platform {
-		rect  = {300, 390, 140, 16},
-		color = rl.BROWN,
-	}
-	game.coins[0] = Coin {
-		pos = {400, 525},
-	}
-	game.coins[1] = Coin {
-		pos = {170, 360},
-	}
-	game.coins[2] = Coin {
-		pos = {370, 360},
-	}
-	game.doors[0] = Door {
-		rect = {height = WINDOW_HEIGHT, width = 20, x = WINDOW_WIDTH / 2, y = 0},
-		open = false,
-		coins_required = 3,
-	}
-
-	game.door_count = 1
-
-	game.coin_count = 3
-	game.platform_count = 3
-
+	load_level(&game, 0)
 	return game
 }
 
 game_update :: proc(game: ^Game, dt: f32) {
+	if (game.game_complete) do return
+	if game.transition_timer > 0 {
+		game.transition_timer -= dt
+		if game.transition_timer <= 0 {
+			next := game.current_level + 1
+			if next < LEVEL_COUNT {
+				game.current_level = next
+				load_level(game, next)
+			} else {
+				game.game_complete = true
+			}
+		}
+		return
+	}
 	platforms := game.platforms[:game.platform_count]
 	doors := game.doors[:game.door_count]
 	player_update(&game.player, platforms, doors, dt)
 	coins_collect(game)
 	draw_doors(game.doors[:game.door_count])
-	draw_framerate()
-	draw_score(game^)
+	draw_hud(game^)
+	if (game.total_score == game.coin_count && game.coin_count > 0) {
+		game.transition_timer = LEVEL_TRANSITION_DELAY
+	}
 }
 
 
@@ -171,6 +153,8 @@ game_draw :: proc(game: ^Game) {
 	draw_doors(game.doors[:game.door_count])
 	draw_player(game.player)
 	draw_coins(game.coins[:game.coin_count])
+	draw_hud(game^)
+	game_overlay(game^)
 }
 
 draw_platforms :: proc(platforms: []Platform) {
@@ -232,24 +216,13 @@ coins_collect :: proc(game: ^Game) {
 		if rl.CheckCollisionCircleRec(coin.pos, COIN_RADIUS, pr) {
 			coin.collected = true
 			game.total_score += 1
+			game.score += 1
 
 		}
 	}
 	check_door(game^, game.doors[:game.door_count])
 }
 
-draw_score :: proc(game: Game) {
-	collected: u8
-	for c in game.coins {
-		if c.collected {
-			collected += 1
-		}
-	}
-	score_text := fmt.ctprintf("Total score: %d", game.total_score)
-	coins := fmt.ctprintf("Coins: %d/%d", collected, game.coin_count)
-	rl.DrawText(score_text, WINDOW_WIDTH - 200, 10, 20, rl.BLACK)
-	rl.DrawText(coins, WINDOW_WIDTH - 200, 30, 20, rl.BLACK)
-}
 
 draw_doors :: proc(doors: []Door) {
 	for d in doors {
@@ -288,3 +261,16 @@ check_door :: proc(game: Game, door: []Door) {
 		}
 	}
 }
+
+
+draw_score :: proc(game: Game) {
+	score_text := fmt.ctprintf("Total score: %d", game.total_score)
+	coins := fmt.ctprintf("Coins: %d/%d", game.score, game.coin_count)
+	rl.DrawText(score_text, WINDOW_WIDTH - 200, 10, 20, rl.BLACK)
+	rl.DrawText(coins, WINDOW_WIDTH - 200, 30, 20, rl.BLACK)
+}
+draw_hud :: proc(game: Game) {
+	draw_score(game)
+	rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), 10, 10, 20, rl.BLACK)
+}
+game_overlay :: proc(game: Game) {}
