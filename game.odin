@@ -272,4 +272,15 @@ draw_hud :: proc(game: Game) {
 	score_w := rl.MeasureText(score_str, 16)
 	rl.DrawText(score_str, SCREEN_WIDTH - score_w - 10, 30, 20, rl.BLACK)
 }
-game_overlay :: proc(game: Game) {}
+game_overlay :: proc(game: Game) {
+	if !game.game_complete && game.transition_timer <= 0 do return
+	rl.DrawRectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, {0, 0, 0, 160})
+  if game.game_complete {
+    title : cstring = "Meh, you did okay..."
+    title_w := rl.MeasureText(title, 48)
+    subtitle := fmt.ctprintf("Total coins collected: %d across %d levels.", game.total_score, LEVEL_COUNT)
+    subtitle_w := rl.MeasureText(subtitle, 32)
+    rl.DrawText(title, WINDOW_WIDTH / 2 - title_w / 2, WINDOW_HEIGHT / 2 - subtitle_w / 2 - 40, 48, rl.BLACK)
+    rl.DrawText(subtitle, WINDOW_WIDTH / 2 - subtitle_w / 2, WINDOW_HEIGHT / 2 + 40, 32, rl.BLACK)
+  }
+}

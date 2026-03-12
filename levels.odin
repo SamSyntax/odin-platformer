@@ -2,7 +2,7 @@ package main
 
 import rl "vendor:raylib"
 
-LEVEL_COUNT :: 3
+LEVEL_COUNT :: 1
 LEVEL_TRANSITION_DELAY :: f32(1.5)
 
 load_level :: proc(game: ^Game, index: u8) {
@@ -85,16 +85,16 @@ level_2 :: proc(game: ^Game) {
 	add_coin(game, 350, 450)
 	add_coin(game, 550, 370)
 	add_coin(game, 350, 290)
-	add_coin(game, 150, 220)
+	add_coin(game, 150, 240)
 	add_coin(game, 400, 70)
 	add_coin(game, 450, 70)
 
 	add_door(game, 460, 65, 20, 30, 4)
 }
 level_3 :: proc(game: ^Game) {
-	game.player.pos = {40, 520}
+	game.player.pos = {40, 500}
 
-	add_platform(game, 0, 560, 100, 40, rl.DARKBLUE)
+	add_platform(game, 0, 560, 200, 40, rl.DARKBLUE)
 
 	add_platform(game, 220, 480, 80, 16, rl.BLUE)
 	add_platform(game, 450, 480, 80, 16, rl.BLUE)
