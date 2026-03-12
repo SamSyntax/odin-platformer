@@ -77,7 +77,7 @@ game_init :: proc() -> Game {
 	game.player.direction = .LEFT
 
 	game.platforms[0] = Platform {
-		rect  = {0, 560, 800, 40},
+		rect  = {0, 560, WINDOW_WIDTH, 40},
 		color = rl.DARKGREEN,
 	}
 	game.platforms[1] = Platform {
@@ -146,7 +146,7 @@ player_update :: proc(player: ^Player, platforms: []Platform, doors: []Door, dt:
 	for p in platforms {
 		resolve_horizontal(player, p.rect)
 	}
-	player.pos.x = clamp(player.pos.x, 0, f32(SCREEN_WIDTH) - player.size.x)
+	player.pos.x = clamp(player.pos.x, 0, f32(WINDOW_WIDTH) - player.size.x)
 
 	player.on_ground = false
 	player.pos.y += player.vel.y * dt
