@@ -77,10 +77,16 @@ player_update :: proc(player: ^Player, platforms: []Platform, dt: f32) {
 	// accumulate gravity each frame
 	player.vel.y = min(player.vel.y + GRAVITY * dt, MAX_FALL_SPEED)
 	player.pos.x += player.vel.x * dt
+	for p in platforms {
+		resolve_horizontal(player, p.rect)
+	}
 	player.pos.x = clamp(player.pos.x, 0, f32(SCREEN_WIDTH) - player.size.x)
 
 	player.on_ground = false
 	player.pos.y += player.vel.y * dt
+	for p in platforms {
+		resolve_vertical(player, p.rect)
+	}
 
 	if player.pos.y > f32(SCREEN_WIDTH) + 200 {
 		player.pos = player.spawn_pos
@@ -94,7 +100,11 @@ game_draw :: proc(game: ^Game) {
 	draw_player(game.player)
 }
 
-draw_platforms :: proc(platforms: []Platform) {}
+draw_platforms :: proc(platforms: []Platform) {
+	for p in platforms {
+		rl.DrawRectangleRec(p.rect, p.color)
+	}
+}
 
 player_rect :: proc(p: Player) -> rl.Rectangle {
 	return {p.pos.x, p.pos.y, p.size.x, p.size.y}
@@ -106,6 +116,11 @@ draw_player :: proc(player: Player) {
 	eye_y := i32(r.y) + 12
 	left_x := i32(r.x) + 6
 	right_x := i32(r.x) + 16
+	if rl.IsKeyPressed(.LEFT) || rl.IsKeyPressed(.A) {
+		eye_y = i32(r.y) + 12
+		left_x = i32(r.x) + 6
+		right_x = i32(r.x) + 16
+	}
 	rl.DrawCircle(left_x, eye_y, 5, rl.WHITE)
 	rl.DrawCircle(right_x, eye_y, 5, rl.WHITE)
 	rl.DrawCircle(left_x + 1, eye_y + 1, 2, rl.BLACK)
