@@ -3,6 +3,8 @@ package main
 import "core:fmt"
 import rl "vendor:raylib"
 
+foreign import "raylib"
+
 SCREEN_WIDTH :: 800
 SCREEN_HEIGHT :: 600
 PLAYER_COLOUR :: rl.Color{70, 130, 180, 255}
@@ -11,6 +13,8 @@ JUMP_VELOCITY :: f32(-560)
 MOVE_SPEED :: f32(280)
 MAX_FALL_SPEED :: f32(800)
 MAX_PLATFORMS :: 16
+MAX_COINS :: 32
+COIN_RADIUS :: f32(8)
 
 Platform :: struct {
 	rect:  rl.Rectangle,
@@ -34,11 +38,19 @@ Player :: struct {
 Game :: struct {
 	player:         Player,
 	platforms:      [MAX_PLATFORMS]Platform,
-	platform_count: i8,
+	platform_count: u8,
+	coins:          [MAX_COINS]Coin,
+	coin_count:     u8,
+	total_score:    u16,
+}
+
+Coin :: struct {
+	pos:       rl.Vector2,
+	collected: bool,
 }
 
 draw_framerate :: proc() {
-  rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), 10, 10, 20, rl.BLACK)
+	rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), 10, 10, 20, rl.BLACK)
 }
 
 game_init :: proc() -> Game {
@@ -46,7 +58,7 @@ game_init :: proc() -> Game {
 	game.player.size = {28, 44}
 	game.player.pos = {60, 460}
 	game.player.spawn_pos = game.player.pos
-  game.player.direction = .LEFT
+	game.player.direction = .LEFT
 
 	game.platforms[0] = Platform {
 		rect  = {0, 560, 800, 40},
@@ -57,9 +69,20 @@ game_init :: proc() -> Game {
 		color = rl.BROWN,
 	}
 	game.platforms[2] = Platform {
-		rect  = {240, 260, 330, 24},
+		rect  = {300, 390, 140, 16},
 		color = rl.BROWN,
 	}
+	game.coins[0] = Coin {
+		pos = {400, 525},
+	}
+	game.coins[1] = Coin {
+		pos = {170, 360},
+	}
+	game.coins[2] = Coin {
+		pos = {370, 360},
+	}
+
+	game.coin_count = 3
 	game.platform_count = 3
 
 	return game
@@ -68,8 +91,10 @@ game_init :: proc() -> Game {
 game_update :: proc(game: ^Game, dt: f32) {
 	platforms := game.platforms[:game.platform_count]
 	player_update(&game.player, platforms, dt)
-  draw_framerate()
+	coins_collect(game)
+	draw_framerate()
 }
+
 
 player_update :: proc(player: ^Player, platforms: []Platform, dt: f32) {
 	player.vel.x = 0
@@ -113,6 +138,7 @@ game_draw :: proc(game: ^Game) {
 	rl.ClearBackground({135, 206, 235, 255})
 	draw_platforms(game.platforms[:game.platform_count])
 	draw_player(game.player)
+	draw_coins(game.coins[:game.coin_count])
 }
 
 draw_platforms :: proc(platforms: []Platform) {
@@ -123,7 +149,7 @@ draw_platforms :: proc(platforms: []Platform) {
 }
 
 player_rect :: proc(p: Player) -> rl.Rectangle {
-	return {p.pos.x, p.pos.y, p.size.x, p.size.y,}
+	return {p.pos.x, p.pos.y, p.size.x, p.size.y}
 }
 
 draw_player :: proc(player: Player) {
@@ -144,4 +170,29 @@ draw_player :: proc(player: Player) {
 	rl.DrawCircle(right_x, eye_y, 5, rl.WHITE)
 	rl.DrawCircle(left_x + 1, eye_y + 1, 2, rl.BLACK)
 	rl.DrawCircle(right_x + 1, eye_y + 1, 2, rl.BLACK)
+}
+
+coin_rect :: proc(coin: Coin) -> rl.Rectangle {
+	return {coin.pos.x, coin.pos.y, COIN_RADIUS * 2, COIN_RADIUS * 2}
+}
+
+draw_coins :: proc(coins: []Coin) {
+	for coin in coins {
+		if !coin.collected {
+			rl.DrawCircle(i32(coin.pos.x), i32(coin.pos.y), COIN_RADIUS, rl.YELLOW)
+		}
+	}
+}
+
+
+coins_collect :: proc(game: ^Game) {
+	pr := player_rect(game.player)
+	for &coin in game.coins[:game.coin_count] {
+		if coin.collected do continue
+		if rl.CheckCollisionCircleRec(coin.pos, COIN_RADIUS, pr) {
+			coin.collected = true
+			game.total_score += 1
+
+		}
+	}
 }
