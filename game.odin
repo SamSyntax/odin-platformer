@@ -1,5 +1,6 @@
 package main
 
+import "core:fmt"
 import rl "vendor:raylib"
 
 SCREEN_WIDTH :: 800
@@ -16,11 +17,17 @@ Platform :: struct {
 	color: rl.Color,
 }
 
+Direction :: enum u8 {
+	LEFT,
+	RIGHT,
+}
+
 Player :: struct {
 	vel:       rl.Vector2,
 	pos:       rl.Vector2,
 	size:      rl.Vector2,
 	spawn_pos: rl.Vector2,
+	direction: Direction,
 	on_ground: bool,
 }
 
@@ -30,11 +37,16 @@ Game :: struct {
 	platform_count: i8,
 }
 
+draw_framerate :: proc() {
+  rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), 10, 10, 20, rl.BLACK)
+}
+
 game_init :: proc() -> Game {
 	game: Game
 	game.player.size = {28, 44}
 	game.player.pos = {60, 460}
 	game.player.spawn_pos = game.player.pos
+  game.player.direction = .LEFT
 
 	game.platforms[0] = Platform {
 		rect  = {0, 560, 800, 40},
@@ -56,6 +68,7 @@ game_init :: proc() -> Game {
 game_update :: proc(game: ^Game, dt: f32) {
 	platforms := game.platforms[:game.platform_count]
 	player_update(&game.player, platforms, dt)
+  draw_framerate()
 }
 
 player_update :: proc(player: ^Player, platforms: []Platform, dt: f32) {
@@ -63,9 +76,11 @@ player_update :: proc(player: ^Player, platforms: []Platform, dt: f32) {
 
 	if rl.IsKeyDown(.LEFT) || rl.IsKeyDown(.A) {
 		player.vel.x = -MOVE_SPEED
+		player.direction = .LEFT
 	}
 	if rl.IsKeyDown(.RIGHT) || rl.IsKeyDown(.D) {
 		player.vel.x = MOVE_SPEED
+		player.direction = .RIGHT
 	}
 
 	jump_pressed := rl.IsKeyPressed(.SPACE) || rl.IsKeyPressed(.UP) || rl.IsKeyPressed(.W)
@@ -103,23 +118,27 @@ game_draw :: proc(game: ^Game) {
 draw_platforms :: proc(platforms: []Platform) {
 	for p in platforms {
 		rl.DrawRectangleRec(p.rect, p.color)
+		rl.DrawRectangle(i32(p.rect.x), i32(p.rect.y), i32(p.rect.width), 4, {255, 255, 255, 80})
 	}
 }
 
 player_rect :: proc(p: Player) -> rl.Rectangle {
-	return {p.pos.x, p.pos.y, p.size.x, p.size.y}
+	return {p.pos.x, p.pos.y, p.size.x, p.size.y,}
 }
 
 draw_player :: proc(player: Player) {
 	r := player_rect(player)
 	rl.DrawRectangleRec(r, PLAYER_COLOUR)
 	eye_y := i32(r.y) + 12
-	left_x := i32(r.x) + 6
-	right_x := i32(r.x) + 16
-	if rl.IsKeyPressed(.LEFT) || rl.IsKeyPressed(.A) {
-		eye_y = i32(r.y) + 12
+	left_x := i32(r.x)
+	right_x := i32(r.x)
+	switch player.direction {
+	case .LEFT:
 		left_x = i32(r.x) + 6
 		right_x = i32(r.x) + 16
+	case .RIGHT:
+		left_x = i32(r.x) + 12
+		right_x = i32(r.x) + 22
 	}
 	rl.DrawCircle(left_x, eye_y, 5, rl.WHITE)
 	rl.DrawCircle(right_x, eye_y, 5, rl.WHITE)
