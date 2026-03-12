@@ -2,7 +2,7 @@ package main
 
 import rl "vendor:raylib"
 
-LEVEL_COUNT :: 1
+LEVEL_COUNT :: 3
 LEVEL_TRANSITION_DELAY :: f32(1.5)
 
 load_level :: proc(game: ^Game, index: u8) {
